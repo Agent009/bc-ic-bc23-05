@@ -1,3 +1,5 @@
+### [↩ Back to main README.md](../README.md)
+
 # Motoko Bootcamp 2023 - Day 1 Question Answers
 
 ### 1. How much is the current memory capacity of a canister?
