@@ -1,1 +1,1 @@
-# motokobootcamp2023
+# Motoko Bootcamp 2023 - Day 3 Question Answers
