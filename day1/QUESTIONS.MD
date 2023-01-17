@@ -4,8 +4,9 @@
 
 ### 1. How much is the current memory capacity of a canister?
 
-* **4GB** stable memory according to [official documentation](https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api-stable-memory).
-* There is an [executed proposal (18337)](https://dashboard.internetcomputer.org/proposal/18337) to increase the limit to **300GB**.
+* **4GB** stable memory according to [official documentation](https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api-stable-memory). Looks like this needs updating.
+* Seems to have been increased to **48GB** according to [proposal 92573](https://dashboard.internetcomputer.org/proposal/92573) ([forum ref](https://forum.dfinity.org/t/increased-canister-smart-contract-memory/6148/140))
+* There is another [executed proposal (18337)](https://dashboard.internetcomputer.org/proposal/18337) to increase the limit to **300GB**.
     
 ### 2. What is the issue with the following code sample?
 
