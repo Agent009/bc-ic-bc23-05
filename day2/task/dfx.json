@@ -1,0 +1,32 @@
+{
+  "canisters": {
+    "backend": {
+      "main": "src/backend/main.mo",
+      "type": "motoko"
+    },
+    "webpage": {
+      "main": "src/webpage/main.mo",
+      "type": "motoko"
+    },
+    "interface": {
+      "dependencies": [
+        "backend", "webpage"
+      ],
+      "frontend": {
+        "entrypoint": "src/interface/public/index.html"
+      },
+      "source": [
+        "src/interface/public"
+      ],
+      "type": "assets"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "dfx": "0.12.1",
+  "version": 1
+}
