@@ -1,11 +1,11 @@
 {
   "canisters": {
     "backend": {
-      "main": "src/backend/main.mo",
+      "main": "canisters/backend/main.mo",
       "type": "motoko"
     },
     "webpage": {
-      "main": "src/webpage/main.mo",
+      "main": "canisters/webpage/main.mo",
       "type": "motoko"
     },
     "interface": {
@@ -13,20 +13,30 @@
         "backend", "webpage"
       ],
       "frontend": {
-        "entrypoint": "src/interface/public/index.html"
+        "entrypoint": "dist/index.html"
       },
       "source": [
-        "src/interface/public"
+        "dist/"
       ],
       "type": "assets"
     }
   },
   "defaults": {
     "build": {
-      "args": "",
       "packtool": ""
     }
   },
-  "dfx": "0.12.1",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": [
+        "https://mainnet.dfinity.network"
+      ],
+      "type": "persistent"
+    }
+  },
   "version": 1
 }
