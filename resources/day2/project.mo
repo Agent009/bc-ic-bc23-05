@@ -1,152 +1,104 @@
-import Array "mo:base/Array";
+import Int "mo:base/Int";
+import Option "mo:base/Option";
+import Diary "Diary";
 import Buffer "mo:base/Buffer";
-import Float "mo:base/Float";
-import Text "mo:base/Text";
-import Iter "mo:base/Iter";
+import Result "mo:base/Result";
 import Nat "mo:base/Nat";
-import Nat64 "mo:base/Nat64";
-import { equal } "mo:base/Nat";
-import Debug "mo:base/Debug";
+import Text "mo:base/Text";
+import Bool "mo:base/Bool";
 
-actor {
-    // 1. Write a function average_array that takes an array of integers and returns the average value of the elements in the array.
-    // dfx canister call bc23_backend average_array '(vec {2;3;4})'
-    // Should give: (3 : int)
-    // dfx canister call bc23_backend average_array '(vec {2;3})'
-    // Should give: (2 : int) (rounded down)
-    public query func average_array(array : [Int]) : async Int {
-        var sum : Int = 0;
-        var count : Int = array.size();
+actor bc2305 {
+    //=============== DAY 2 - THE HOMEWORK DIARY ===============\\
+    public type Homework = Diary.Homework;
+    var homeworkDiary = Buffer.Buffer<Homework>(0);
 
-        for (val in array.vals()) {
-            sum += val;
-        };
-
-        let average : Float = Float.fromInt(sum) / Float.fromInt(count);
-
-        return Float.toInt(average);
+    // Add a new homework task
+    public func addHomework(homework : Homework) : async Nat {
+        homeworkDiary.add(homework);
+        return homeworkDiary.size();
     };
 
-    // 2. Character count: Write a function that takes in a string and a character, and returns the number of occurrences of that character in the string.
-    // dfx canister call bc23_backend count_character '("Characters", 97)'
-    // Should give: (2 : nat) ('a')
-    // dfx canister call bc23_backend count_character '("Characters", 122)'
-    // Should give: (0 : nat) ('z')
-    public query func count_character(t : Text, c : Char) : async Nat {
-        var count : Nat = 0;
+    // Get a specific homework task by id
+    public query func getHomework(id : Nat) : async Result.Result<Homework, Text> {
+        let result : ?Homework = homeworkDiary.getOpt(id);
 
-        for (char in t.chars()) {
-            if (char == c) {
-                count += 1;
-            };
+        switch (result) {
+            case (null) { #err("Invalid index.") };
+            case (?record) { #ok(record) };
         };
-
-        return count;
     };
 
-    // 3. Write a function factorial that takes a natural number n and returns the factorial of n.
-    // dfx canister call bc23_backend factorial '(0)'
-    // Should give: (1 : nat)
-    // dfx canister call bc23_backend factorial '(3)'
-    // Should give: (6 : nat)
-    public query func factorial(n : Nat) : async Nat {
-        let result = func factorialize(num : Nat) : Nat {
-            if (num < 0) {
-                return (0 - 1);
-            } else {
-                if (num == 0) {
-                    return 1;
-                } else {
-                    num * factorialize(num - 1);
+    // Update a homework task's title, description, and/or due date
+    public func updateHomework(id : Nat, homework : Homework) : async Result.Result<(), Text> {
+        let result : ?Homework = homeworkDiary.getOpt(id);
+
+        switch (result) {
+            case (null) { #err("Invalid index.") };
+            case (?record) {
+                var newRecord : Homework = {
+                    title = switch (Text.size(homework.title)) { case (0) { record.title }; case (_) { homework.title }; };
+                    description = switch (Text.size(homework.description)) { case (0) { record.description }; case (_) { homework.description }; };
+                    dueDate = switch (record.dueDate > 0) { case (true) { homework.dueDate }; case (_) { record.dueDate }; };
+                    completed = homework.completed;
                 };
+
+                homeworkDiary.put(id, newRecord);
+                #ok() 
             };
         };
-
-        return result(n);
     };
 
-    // 4. Write a function number_of_words that takes a sentence and returns the number of words in the sentence.
-    // dfx canister call bc23_backend number_of_words '("This sentence has 5 words.")'
-    // Should give: (5 : nat)
-    public query func number_of_words(t : Text) : async Nat {
-        let iter : Iter.Iter<Text> = Text.split(t, #text(" "));
+    // Mark a homework task as completed
+    public func markAsCompleted(id : Nat) : async Result.Result<(), Text> {
+        let result : ?Homework = homeworkDiary.getOpt(id);
 
-        return Iter.size<Text>(iter);
-    };
-
-    // 5. Write a function find_duplicates that takes an array of natural numbers and returns a new array containing all duplicate numbers.
-    // The order of the elements in the returned array should be the same as the order of the first occurrence in the input array.
-    // dfx canister call bc23_backend find_duplicates '(vec {10;5;5;15;20;10})'
-    // Should give: (vec { 10 : nat; 5 : nat })
-    public query func find_duplicates(a : [Nat]) : async [Nat] {
-        var duplicates = Buffer.Buffer<Nat>(0);
-
-        var sum = 0;
-        for (i in a.keys()) {
-            let num : Nat = a.get(i);
-            var otherElements = Buffer.Buffer<Nat>(0);
-
-            for (j in a.keys()) {
-                if (j != i) {
-                    otherElements.add(a.get(j));
+        switch (result) {
+            case (null) { #err("Invalid index.") };
+            case (?record) {
+                var newRecord : Homework = {
+                    title = record.title;
+                    description = record.description;
+                    dueDate = record.dueDate;
+                    completed = true;
                 };
-            };
 
-            if (otherElements.size() > 0 and Buffer.contains<Nat>(otherElements, num, equal) and not Buffer.contains<Nat>(duplicates, num, equal)) {
-                duplicates.add(num);
+                homeworkDiary.put(id, newRecord);
+                #ok() 
             };
         };
-
-        return Buffer.toArray(duplicates);
     };
 
-    // 6. Write a function convert_to_binary that takes a natural number n and returns a string representing the binary representation of n.
-    // dfx canister call bc23_backend convert_to_binary '(6)'
-    // Should give: (vec {0; 1; 1; 0})
-    // dfx canister call bc23_backend convert_to_binary '(20)'
-    // Should give: (vec {0; 1; 0; 1; 0; 0})
-    public query func convert_to_binary(n : Nat) : async Text {
-        // Our limit is 64 bits.
-        let b = Array.init<Nat64>(64, 0x00);
-        // Keep a record of the index as we loop through bytes.
-        var id : Nat = 0;
-        // We will need to work with the provided number, so let's grab a local Nat64 copy of it.
-        var num : Nat64 = Nat64.fromIntWrap(n);
+    // Delete a homework task by id
+    public func deleteHomework(id : Nat) : async Result.Result<(), Text> {
+        let result : ?Homework = homeworkDiary.getOpt(id);
 
-        // Let's create the necessary bit values.
-        // The modulus allows us to work out if a bit needs to be set or not.
-        // At each iteration, we divide the working copy of the number by 2, as the next bit (to the left) is double in value to the current one.
-        while (num > 0) {
-            b[id] := num % 2;
-            num := num / 2;
-            id += 1;
-        };
-
-        // We now need to reverse the bits, so we can display them properly (most significant to the left)
-        // Debug.print(debug_show(b));
-        let buffer = Buffer.Buffer<Nat64>(id);
-
-        // Reverse the bits by looping through the bits in reverse order, and appending the elements onto a new buffer in the right order.
-        while (id > 0) {
-            buffer.add(b[id]);
-
-            if (id == 1) {
-                buffer.add(b[0]);
+        switch (result) {
+            case (null) { #err("Invalid index.") };
+            case (?record) {
+                let x = homeworkDiary.remove(id);
+                #ok() 
             };
-
-            id -= 1;
         };
+    };
 
-        // Finally, we need to convert the array of bits into a text string.
-        // Debug.print(debug_show(Buffer.toArray(buffer)));
-        var binaryString : Text = "";
+    // Get the list of all homework tasks
+    public query func getAllHomework() : async [Homework] {
+        return Buffer.toArray<Homework>(homeworkDiary);
+    };
 
-        for (element in buffer.vals()) {
-            binaryString := binaryString # Nat64.toText(element);
-        };
+    // Get the list of pending (not completed) homework tasks
+    public query func getPendingHomework() : async [Homework] {
+        let filteredEntries = Buffer.clone(homeworkDiary);
+        filteredEntries.filterEntries(func(_, x) = x.completed == false);
+        return Buffer.toArray<Homework>(filteredEntries);
+    };
 
-        // return Array.freeze(b);
-        // return Buffer.toArray(buffer);
-        return binaryString;
+    // Search for homework tasks based on a search terms
+    public query func searchHomework(searchTerm : Text) : async [Homework] {
+        let filteredEntries = Buffer.clone(homeworkDiary);
+        filteredEntries.filterEntries(func(_, x) {
+            (Text.contains(x.title, #text searchTerm)) or (Text.contains(x.description, #text searchTerm));
+        });
+        return Buffer.toArray<Homework>(filteredEntries);
     };
 };

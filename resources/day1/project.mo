@@ -1,6 +1,6 @@
 import Int "mo:base/Int";
 import Option "mo:base/Option";
-import Calculator "calculator";
+import Calculator "Calculator";
 
 actor bc2305 {
     //=============== DAY 1 - THE CALCULATOR ===============\\
