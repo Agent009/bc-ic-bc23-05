@@ -2,7 +2,7 @@ import Int "mo:base/Int";
 import Option "mo:base/Option";
 import Calculator "calculator";
 
-actor bc24 {
+actor bc2305 {
     //=============== DAY 1 - THE CALCULATOR ===============\\
     var counter : Float = 0;
     
@@ -26,13 +26,13 @@ actor bc24 {
         return Option.make(counter);
     };
     
-    // dfx canister call bc24 reset
+    // dfx canister call bc2305 reset
     // Should set the counter to: 0
     public func reset(): async () {
         counter := 0;
     };
     
-    // dfx canister call bc24 see
+    // dfx canister call bc2305 see
     // Should give: (5 : nat)
     public query func see() : async Float {
         return counter;
