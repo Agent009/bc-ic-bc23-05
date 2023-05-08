@@ -1,4 +1,4 @@
-# motokobootcamp2024
+# Motoko Bootcamp - 2023-05 Edition
 
 ## Day 1
 
