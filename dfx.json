@@ -1,0 +1,15 @@
+{
+  "canisters": {
+    "bc24": {
+      "main": "main.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "version": 1
+}
