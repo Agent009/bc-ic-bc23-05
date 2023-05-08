@@ -1,36 +1,25 @@
-# motokobootcamp2023
+# motokobootcamp2024
 
 ## Day 1
 
-* [Question Answers](day1/QUESTIONS.MD)
-* [Challenges](day1/challenges.mo)
+* [Project - The Calculator](day1/project.mo)
 
 ## Day 2
 
-* [Question Answers](day2/QUESTIONS.MD)
-* [Challenges](day2/challenges.mo)
-* [Task](day2/task/README.md)
+* [Project - The Homework diary](day2/project.mo)
 
 ## Day 3
 
-* [Question Answers](day3/QUESTIONS.MD)
-* [Challenges](day3/challenges.mo)
-* [Task](day3/task/README.md)
+* [Project - The Student wall](day3/project.mo)
 
 ## Day 4
 
-* [Question Answers](day4/QUESTIONS.MD)
-* [Challenges](day4/challenges.mo)
-* [Task](day4/task/README.md)
+* [Project - MotoCoin](day4/project.mo)
 
 ## Day 5
 
-* [Question Answers](day5/QUESTIONS.MD)
-* [Challenges](day5/challenges.mo)
-* [Task](day5/task/README.md)
+* [Project - The Verifier](day5/project.mo)
 
 ## Day 6
 
-* [Question Answers](day6/QUESTIONS.MD)
-* [Challenges](day6/challenges.mo)
-* [Task](day6/task/README.md)
+* [Project - TBR](day6/project.mo)
