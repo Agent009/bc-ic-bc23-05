@@ -1,5 +1,7 @@
 # Motoko Bootcamp - 2023-05 Edition
 
+* [Deployed Canister ID](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.ic0.app/?id=uv34l-oaaaa-aaaap-qa4ua-cai): [uv34l-oaaaa-aaaap-qa4ua-cai](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.ic0.app/?id=uv34l-oaaaa-aaaap-qa4ua-cai)
+
 ## Day 1
 
 * [Project - The Calculator](resources/day1/project.mo)
