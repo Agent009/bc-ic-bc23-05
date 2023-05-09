@@ -1,104 +1,137 @@
 import Int "mo:base/Int";
 import Option "mo:base/Option";
-import Diary "resources/day2/Diary";
+import Wall "resources/day3/Wall";
 import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Bool "mo:base/Bool";
+import HashMap "mo:base/HashMap";
+import Hash "mo:base/Hash";
+import Iter "mo:base/Iter";
+import Principal "mo:base/Principal";
+import Order "mo:base/Order";
+import Array "mo:base/Array";
 
 actor bc2305 {
-    //=============== DAY 2 - THE HOMEWORK DIARY ===============\\
-    public type Homework = Diary.Homework;
-    var homeworkDiary = Buffer.Buffer<Homework>(0);
+    //=============== DAY 3 - THE STUDENT WALL ===============\\
+    public type Content = Wall.Content;
+    public type Message = Wall.Message;
+    public type RankedMessage = {
+        messageId : Nat;
+        rank : Int;
+    };
+    var messageId : Nat = 0;
+    var wall = HashMap.HashMap<Nat, Message>(1, Nat.equal, Hash.hash);
 
-    // Add a new homework task
-    public func addHomework(homework : Homework) : async Nat {
-        homeworkDiary.add(homework);
-        return homeworkDiary.size() - 1;
+    // Add a new message to the wall
+    public shared ({ caller }) func writeMessage(c : Content) : async Nat {
+        // Create the message from the content.
+        let message : Message = Wall.create_message(c, caller);
+        // Add it to the wall and return the new message ID.
+        messageId := Wall.add_message_to_wall(wall, message, messageId);
+        return messageId;
     };
 
-    // Get a specific homework task by id
-    public query func getHomework(id : Nat) : async Result.Result<Homework, Text> {
-        let result : ?Homework = homeworkDiary.getOpt(id);
+    //Get a specific message by ID
+    public query func getMessage(messageId : Nat) : async Result.Result<Message, Text> {
+        let message : ?Message = wall.get(messageId);
 
-        switch (result) {
-            case (null) { #err("Invalid index.") };
-            case (?record) { #ok(record) };
+        switch (message) {
+            case (null) { return #err("Invalid message ID supplied.") };
+            case (?record) { return #ok(record) };
         };
     };
 
-    // Update a homework task's title, description, and/or due date
-    public func updateHomework(id : Nat, homework : Homework) : async Result.Result<(), Text> {
-        let result : ?Homework = homeworkDiary.getOpt(id);
+    // Update the content for a specific message by ID
+    public shared ({ caller }) func updateMessage(messageId : Nat, c : Content) : async Result.Result<(), Text> {
+        let message : ?Message = wall.get(messageId);
 
-        switch (result) {
-            case (null) { #err("Invalid index.") };
+        switch (message) {
+            case (null) { return #err("Invalid message ID supplied.") };
             case (?record) {
-                var newRecord : Homework = {
-                    title = switch (Text.size(homework.title)) { case (0) { record.title }; case (_) { homework.title }; };
-                    description = switch (Text.size(homework.description)) { case (0) { record.description }; case (_) { homework.description }; };
-                    dueDate = switch (record.dueDate > 0) { case (true) { homework.dueDate }; case (_) { record.dueDate }; };
-                    completed = homework.completed;
+                if (Principal.notEqual(caller, record.creator)) {
+                    return #err("Only the creator of the message can update it.");
                 };
 
-                homeworkDiary.put(id, newRecord);
-                #ok() 
+                wall.put(messageId, Wall.update_message_content(record, c));
+                return #ok();
             };
         };
     };
 
-    // Mark a homework task as completed
-    public func markAsCompleted(id : Nat) : async Result.Result<(), Text> {
-        let result : ?Homework = homeworkDiary.getOpt(id);
+    //Delete a specific message by ID
+    public shared ({ caller }) func deleteMessage(messageId : Nat) : async Result.Result<(), Text> {
+        let message : ?Message = wall.remove(messageId);
 
-        switch (result) {
-            case (null) { #err("Invalid index.") };
+        switch (message) {
+            case (null) { return #err("Invalid message ID supplied.") };
+            case (?record) { #ok() };
+        };
+    };
+
+    // Voting
+    public shared ({ caller }) func upVote(messageId : Nat) : async Result.Result<(), Text> {
+        let message : ?Message = wall.remove(messageId);
+
+        switch (message) {
+            case (null) { return #err("Invalid message ID supplied.") };
             case (?record) {
-                var newRecord : Homework = {
-                    title = record.title;
-                    description = record.description;
-                    dueDate = record.dueDate;
-                    completed = true;
-                };
-
-                homeworkDiary.put(id, newRecord);
-                #ok() 
+                let updatedMessage = Wall.upvote_message(record);
+                wall.put(messageId, updatedMessage);
+                #ok();
             };
         };
     };
+    public shared ({ caller }) func downVote(messageId : Nat) : async Result.Result<(), Text> {
+        let message : ?Message = wall.remove(messageId);
 
-    // Delete a homework task by id
-    public func deleteHomework(id : Nat) : async Result.Result<(), Text> {
-        let result : ?Homework = homeworkDiary.getOpt(id);
-
-        switch (result) {
-            case (null) { #err("Invalid index.") };
+        switch (message) {
+            case (null) { return #err("Invalid message ID supplied.") };
             case (?record) {
-                let x = homeworkDiary.remove(id);
-                #ok() 
+                let updatedMessage = Wall.downvote_message(record);
+                wall.put(messageId, updatedMessage);
+                #ok();
             };
         };
     };
 
-    // Get the list of all homework tasks
-    public query func getAllHomework() : async [Homework] {
-        return Buffer.toArray<Homework>(homeworkDiary);
+    //Get all messages
+    public query func getAllMessages() : async [Message] {
+        return Iter.toArray<(Message)>(wall.vals());
     };
 
-    // Get the list of pending (not completed) homework tasks
-    public query func getPendingHomework() : async [Homework] {
-        let filteredEntries = Buffer.clone(homeworkDiary);
-        filteredEntries.filterEntries(func(_, x) = x.completed == false);
-        return Buffer.toArray<Homework>(filteredEntries);
+    //Get all messages
+    public query func getAllMessagesRanked() : async [Message] {
+        // Create a buffer to store the ranked messages.
+        var rankedMessages = Buffer.Buffer<RankedMessage>(0);
+        for ((key, value) in wall.entries()) {
+            let rankedMessage : RankedMessage = {
+                messageId = key;
+                rank = value.vote;
+            };
+            rankedMessages.add(rankedMessage);
+        };
+
+        rankedMessages.sort(compareRankedMessages);
+        Buffer.reverse(rankedMessages);
+        var sortedMessages = Buffer.Buffer<Message>(0);
+
+        for (rankedMessage in rankedMessages.vals()) {
+            let message : ?Message = wall.get(rankedMessage.messageId);
+
+            switch (message) {
+                case (null) {  };
+                case (?record) { sortedMessages.add(record); };
+            };
+        };
+
+        return Buffer.toArray<Message>(sortedMessages);
     };
 
-    // Search for homework tasks based on a search terms
-    public query func searchHomework(searchTerm : Text) : async [Homework] {
-        let filteredEntries = Buffer.clone(homeworkDiary);
-        filteredEntries.filterEntries(func(_, x) {
-            (Text.contains(x.title, #text searchTerm)) or (Text.contains(x.description, #text searchTerm));
-        });
-        return Buffer.toArray<Homework>(filteredEntries);
+    private func compareRankedMessages(x : RankedMessage, y : RankedMessage) : Order.Order {
+        if (x.rank < y.rank) { #less } else if (x.rank == y.rank) { #equal } else {
+            #greater;
+        };
     };
 };
