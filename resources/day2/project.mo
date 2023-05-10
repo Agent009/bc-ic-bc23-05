@@ -15,7 +15,7 @@ actor bc2305 {
     // Add a new homework task
     public func addHomework(homework : Homework) : async Nat {
         homeworkDiary.add(homework);
-        return homeworkDiary.size();
+        return homeworkDiary.size() - 1;
     };
 
     // Get a specific homework task by id

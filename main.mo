@@ -1,137 +1,151 @@
 import Int "mo:base/Int";
 import Option "mo:base/Option";
-import Wall "resources/day3/Wall";
 import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Nat "mo:base/Nat";
 import Text "mo:base/Text";
 import Bool "mo:base/Bool";
 import HashMap "mo:base/HashMap";
+import TrieMap "mo:base/TrieMap";
 import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Order "mo:base/Order";
 import Array "mo:base/Array";
 
+import Coin "resources/day4/Coin";
+// NOTE: only use for local dev,
+// when deploying to IC, import from "rww3b-zqaaa-aaaam-abioa-cai"
+import BootcampLocalActor "resources/day4/BootcampLocalActor";
+import Debug "mo:base/Debug";
+
 actor bc2305 {
-    //=============== DAY 3 - THE STUDENT WALL ===============\\
-    public type Content = Wall.Content;
-    public type Message = Wall.Message;
-    public type RankedMessage = {
-        messageId : Nat;
-        rank : Int;
-    };
-    var messageId : Nat = 0;
-    var wall = HashMap.HashMap<Nat, Message>(1, Nat.equal, Hash.hash);
-
-    // Add a new message to the wall
-    public shared ({ caller }) func writeMessage(c : Content) : async Nat {
-        // Create the message from the content.
-        let message : Message = Wall.create_message(c, caller);
-        // Add it to the wall and return the new message ID.
-        messageId := Wall.add_message_to_wall(wall, message, messageId);
-        return messageId;
+    //=============== DAY 4 - THE MOTOKO COIN ===============\\
+    type Account = Coin.Account;
+    var ledger = TrieMap.TrieMap<Account, Nat>(Coin.accountsEqual, Coin.accountsHash);
+    let airdropAmount : Nat = 100;
+    let bcICNetworkCanister = actor ("rww3b-zqaaa-aaaam-abioa-cai") : actor {
+        getAllStudentsPrincipal : shared () -> async [Principal];
     };
 
-    //Get a specific message by ID
-    public query func getMessage(messageId : Nat) : async Result.Result<Message, Text> {
-        let message : ?Message = wall.get(messageId);
+    // Returns the name of the token
+    public query func name() : async Text {
+        return "MotoCoin";
+    };
 
-        switch (message) {
-            case (null) { return #err("Invalid message ID supplied.") };
-            case (?record) { return #ok(record) };
+    // Returns the symbol of the token
+    public query func symbol() : async Text {
+        return "MOC";
+    };
+
+    // Returns the the total number of tokens on all accounts
+    public query func totalSupply() : async Nat {
+        var total : Nat = 0;
+
+        for ((account, balance) in ledger.entries()) {
+            total += balance;
+        };
+
+        return total;
+    };
+
+    public query func getAccounts() : async [Principal] {
+        let newMap = TrieMap.map<Account, Nat, Principal>(ledger, Coin.accountsEqual, Coin.accountsHash, func(key, value) = key.owner);
+        return Iter.toArray<Principal>(newMap.vals());
+    };
+
+    public query func getAccountFromPrincipal(principal : Principal) : async Account {
+        return Coin.getAccountFromPrincipal(principal);
+    };
+
+    public func addPrincipalToLedger(principal : Principal) : async () {
+        let account : Account = Coin.getAccountFromPrincipal(principal);
+        ledger.put(account, 0);
+    };
+
+    public query func balanceOf(account : Account) : async (Nat) {
+        let balance : ?Nat = ledger.get(account);
+
+        switch (balance) {
+            case (null) { return 0 };
+            case (?amount) { return amount };
         };
     };
 
-    // Update the content for a specific message by ID
-    public shared ({ caller }) func updateMessage(messageId : Nat, c : Content) : async Result.Result<(), Text> {
-        let message : ?Message = wall.get(messageId);
+    // Transfer tokens to another account
+    public shared ({ caller }) func transfer(from : Account, to : Account, amount : Nat) : async Result.Result<(), Text> {
+        var senderBalance : ?Nat = ledger.get(from);
+        var receiverBalance : ?Nat = ledger.get(to);
 
-        switch (message) {
-            case (null) { return #err("Invalid message ID supplied.") };
-            case (?record) {
-                if (Principal.notEqual(caller, record.creator)) {
-                    return #err("Only the creator of the message can update it.");
+        switch (senderBalance) {
+            case (null) {
+                return #err("The sender doesn't have any balance.");
+            };
+            case (?balance) {
+                if (balance < amount) {
+                    return #err("The sender doesn't have enough balance.");
                 };
 
-                wall.put(messageId, Wall.update_message_content(record, c));
+                ledger.put(from, balance - amount);
+
+                switch (receiverBalance) {
+                    case (null) { ledger.put(to, amount) };
+                    case (?rBalance) { ledger.put(to, rBalance + amount) };
+                };
+
                 return #ok();
             };
         };
     };
 
-    //Delete a specific message by ID
-    public shared ({ caller }) func deleteMessage(messageId : Nat) : async Result.Result<(), Text> {
-        let message : ?Message = wall.remove(messageId);
+    // Airdrop 1000 MotoCoin to any student that is part of the Bootcamp.
+    // dfx canister --network ic call rww3b-zqaaa-aaaam-abioa-cai getAllStudentsPrincipal '()'
+    public func airdrop() : async Result.Result<(), Text> {
+        let principals : [Principal] = await getAllAccounts();
 
-        switch (message) {
-            case (null) { return #err("Invalid message ID supplied.") };
-            case (?record) { #ok() };
-        };
-    };
-
-    // Voting
-    public shared ({ caller }) func upVote(messageId : Nat) : async Result.Result<(), Text> {
-        let message : ?Message = wall.remove(messageId);
-
-        switch (message) {
-            case (null) { return #err("Invalid message ID supplied.") };
-            case (?record) {
-                let updatedMessage = Wall.upvote_message(record);
-                wall.put(messageId, updatedMessage);
-                #ok();
-            };
-        };
-    };
-    public shared ({ caller }) func downVote(messageId : Nat) : async Result.Result<(), Text> {
-        let message : ?Message = wall.remove(messageId);
-
-        switch (message) {
-            case (null) { return #err("Invalid message ID supplied.") };
-            case (?record) {
-                let updatedMessage = Wall.downvote_message(record);
-                wall.put(messageId, updatedMessage);
-                #ok();
-            };
-        };
-    };
-
-    //Get all messages
-    public query func getAllMessages() : async [Message] {
-        return Iter.toArray<(Message)>(wall.vals());
-    };
-
-    //Get all messages
-    public query func getAllMessagesRanked() : async [Message] {
-        // Create a buffer to store the ranked messages.
-        var rankedMessages = Buffer.Buffer<RankedMessage>(0);
-        for ((key, value) in wall.entries()) {
-            let rankedMessage : RankedMessage = {
-                messageId = key;
-                rank = value.vote;
-            };
-            rankedMessages.add(rankedMessage);
-        };
-
-        rankedMessages.sort(compareRankedMessages);
-        Buffer.reverse(rankedMessages);
-        var sortedMessages = Buffer.Buffer<Message>(0);
-
-        for (rankedMessage in rankedMessages.vals()) {
-            let message : ?Message = wall.get(rankedMessage.messageId);
-
-            switch (message) {
-                case (null) {  };
-                case (?record) { sortedMessages.add(record); };
+        for (principal in principals.vals()) {
+            try {
+                // Debug.print("Starting airdrop for " # debug_show(principal));
+                let account : Account = Coin.getAccountFromPrincipal(principal);
+                // Debug.print("Fetched account " # debug_show(account));
+                ledger.put(account, airdropAmount);
+                // Debug.print("Aidrop successful for " # debug_show(principal));
+            } catch (e) {
+                Debug.print("An error occured when perforing the airdrop for principal: " # Principal.toText(principal));
+                return #err("An error occured when perforing the airdrop.");
             };
         };
 
-        return Buffer.toArray<Message>(sortedMessages);
+        return #ok();
     };
 
-    private func compareRankedMessages(x : RankedMessage, y : RankedMessage) : Order.Order {
-        if (x.rank < y.rank) { #less } else if (x.rank == y.rank) { #equal } else {
-            #greater;
+    // dfx canister call bc2305 getAllAccounts '()'
+    private func getAllAccounts() : async [Principal] {
+        // TODO: Change this to "true" for local testing.
+        let isLocal : Bool = false;
+
+        if (isLocal) {
+            let bootcampTestActor = await BootcampLocalActor.BootcampLocalActor();
+            let principals : [Principal] = await bootcampTestActor.getAllStudentsPrincipal();
+
+            for (principal in principals.vals()) {
+                // Debug.print("Creating ledger entry for principal: " # debug_show(principal));
+                let account : Account = Coin.getAccountFromPrincipal(principal);
+                // Debug.print("Account: " # debug_show(account));
+                ledger.put(account, 0);
+            };
+
+            // Debug.print("getAllAccounts() - ledger entries done");
+            return principals;
+        } else {
+            // For the IC network.
+            let principals : [Principal] = await bcICNetworkCanister.getAllStudentsPrincipal();
+
+            for (principal in principals.vals()) {
+                ledger.put(Coin.getAccountFromPrincipal(principal), 0);
+            };
+
+            return principals;
         };
     };
 };
