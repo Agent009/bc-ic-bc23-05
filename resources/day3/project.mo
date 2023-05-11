@@ -15,6 +15,7 @@ import Array "mo:base/Array";
 
 actor bc2305 {
     //=============== DAY 3 - THE STUDENT WALL ===============\\
+    // https://github.com/motoko-bootcamp/motoko-starter/tree/main/days/day-3/project
     public type Content = Wall.Content;
     public type Message = Wall.Message;
     public type RankedMessage = {

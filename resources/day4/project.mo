@@ -21,6 +21,7 @@ import Debug "mo:base/Debug";
 
 actor bc2305 {
     //=============== DAY 4 - THE MOTOKO COIN ===============\\
+    // https://github.com/motoko-bootcamp/motoko-starter/tree/main/days/day-4/project
     type Account = Coin.Account;
     var ledger = TrieMap.TrieMap<Account, Nat>(Coin.accountsEqual, Coin.accountsHash);
     let airdropAmount : Nat = 100;

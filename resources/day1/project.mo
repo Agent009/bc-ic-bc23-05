@@ -4,6 +4,7 @@ import Calculator "Calculator";
 
 actor bc2305 {
     //=============== DAY 1 - THE CALCULATOR ===============\\
+    // https://github.com/motoko-bootcamp/motoko-starter/tree/main/days/day-1/project
     var counter : Float = 0;
     
     public func add(x : Float) : async Float {

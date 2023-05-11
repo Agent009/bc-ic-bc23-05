@@ -9,6 +9,7 @@ import Bool "mo:base/Bool";
 
 actor bc2305 {
     //=============== DAY 2 - THE HOMEWORK DIARY ===============\\
+    // https://github.com/motoko-bootcamp/motoko-starter/tree/main/days/day-2/project
     public type Homework = Diary.Homework;
     var homeworkDiary = Buffer.Buffer<Homework>(0);
 
