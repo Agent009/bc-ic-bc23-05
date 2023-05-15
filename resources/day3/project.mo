@@ -127,6 +127,13 @@ actor bc2305 {
             };
         };
 
+        let buffer = Buffer.Buffer<Message>(1);
+        for (value in wall.vals()) {
+            buffer.add(value);
+        };
+        let arr = Buffer.toArray(buffer);
+        buffer.sort(compare);
+
         return Buffer.toArray<Message>(sortedMessages);
     };
 

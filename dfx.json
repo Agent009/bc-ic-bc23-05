@@ -3,6 +3,18 @@
     "bc2305": {
       "main": "main.mo",
       "type": "motoko"
+    },
+    "interface": {
+      "dependencies": [
+        "bc2305"
+      ],
+      "frontend": {
+        "entrypoint": "dist/index.html"
+      },
+      "source": [
+        "dist/"
+      ],
+      "type": "assets"
     }
   },
   "defaults": {

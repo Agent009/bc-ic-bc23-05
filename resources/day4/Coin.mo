@@ -8,6 +8,7 @@ import Debug "mo:base/Debug";
 import Text "mo:base/Text";
 import Nat32 "mo:base/Nat32";
 import Nat "mo:base/Nat";
+import TrieMap "mo:base/TrieMap";
 
 module Coin {
     public type Subaccount = Blob;
@@ -25,6 +26,18 @@ module Coin {
             owner = principal;
             subaccount = Option.make(_getDefaultSubaccount());
         };
+    };
+
+    // Returns the the total number of tokens on all accounts.
+    public func totalClaimedSupply(ledger : TrieMap.TrieMap<Account, Nat>) : Nat {
+        var claimed : Nat = 0;
+
+        for ((account, balance) in ledger.entries()) {
+            claimed += balance;
+        };
+
+        Debug.print("Total claimed supply " # debug_show(claimed));
+        return claimed;
     };
 
     public func accountsEqual(lhs : Account, rhs : Account) : Bool {
